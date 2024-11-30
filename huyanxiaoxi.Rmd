@@ -1,0 +1,462 @@
+---
+title: "huyanxiaoxi"
+author: "hyyn"
+documentclass: ctexart
+geometry: "left=2.5cm,right=2cm,top=3cm,bottom=2.5cm"
+output: 
+  pdf_document:
+    fig_caption: yes
+    latex_engine: xelatex
+    number_sections: yes
+    toc: yes
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  message = FALSE,
+  warning = FALSE,
+  error = FALSE,
+  out.width = "100%", 
+  fig.showtext = TRUE,
+  fig.align = "center",
+  comment = "#>",
+  df_print = "tibble",
+  paged.print = FALSE,
+  split = FALSE
+)
+
+library(showtext)
+
+showtext_auto()
+
+# 添加微软雅黑字体
+font_add("Microsoft YaHei", "C:/Windows/Fonts/msyh.ttc")
+
+```
+
+```yaml
+---
+documentclass: ctexart
+output: rticles::ctex
+---
+```
+```{r eval=FALSE}
+devtools::install_github(c('rstudio/rmarkdown', 'yihui/tinytex'))
+tinytex::install_tinytex()
+```
+# Question #1: BigBangTheory. (Attached Data: BigBangTheory)
+```{r}
+bigbang <- read.csv("BigBangTheory.csv")
+```
+计算观众数量的最小值和最大值，计算均值、中位数和众数，计算第一和第三四分位数
+```{r}
+min_viewers <- min(bigbang$Viewers..millions., na.rm = TRUE)
+max_viewers <- max(bigbang$Viewers..millions., na.rm = TRUE)
+mean_viewers <- mean(bigbang$Viewers..millions., na.rm = TRUE)
+median_viewers <- median(bigbang$Viewers..millions., na.rm = TRUE)
+mode_viewers <- modeest::mfv(bigbang$Viewers..millions., na.rm = TRUE)
+first_quartile <- quantile(bigbang$Viewers..millions., 0.25, na.rm = TRUE)
+third_quartile <- quantile(bigbang$Viewers..millions., 0.75, na.rm = TRUE)
+```
+查看分析结果
+```{r}
+result1 <- data.frame(最小值 = min_viewers, 最大值 = max_viewers, 均值 = mean_viewers, 中位数 = median_viewers, 第一四分位数 = first_quartile, 第三四分位数 = third_quartile)
+result2 <- data.frame(众数 = mode_viewers)
+result1
+result2
+```
+问题1.2:has viewership grown or declined over the 2011–2012 season? Discuss.
+```{r}
+library(tidyverse)
+library(lubridate)
+df <- read.csv("BigBangTheory.csv", stringsAsFactors = FALSE, fileEncoding = "UTF-8")
+```
+将Air.Date列转换为日期格式
+```{r}
+df$Air.Date <- mdy(df$Air.Date)
+```
+提取年份和季度作为标识、筛选出2011到2012年的数据
+```{r}
+df$Year <- year(df$Air.Date)
+df$Quarter <- quarter(df$Air.Date)
+df_subset <- df %>% filter(Year >= 2011 & Year <= 2012)
+```
+按照年份和季度分组，并计算平均收视率
+```{r}
+quarterly_data <- df_subset %>% 
+  group_by(Year, Quarter) %>% 
+  summarise(ave_viewer = mean(Viewers..millions.),.groups = "drop") %>% 
+  mutate(Quarter_Label = paste(Year, "Q", Quarter, sep = ""))
+
+print(quarterly_data)
+```
+使用ggplot2绘制图表
+```{r}
+ggplot(quarterly_data, aes(x = Quarter_Label, y = ave_viewer, group = 1)) +
+    geom_line(color = "red") +
+    labs(title = "2011年至2012年期间季度平均收视率的折线图",
+         x = "季度",
+         y = "平均收视率") +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 8),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          panel.background = element_blank())
+```
+# Question #2: NBAPlayerPts. (Attached Data: NBAPlayerPts)
+```{r}
+
+```
+加载数据
+```{r}
+nba <- read.csv("NBAPlayerPts.csv")
+```
+a. 显示频率分布
+```{r}
+hist(nba$PPG, breaks = seq(10, 30, by = 5), xlab = '平均得分数(PPG)', main = '频率分布直方图', col = 'blue')
+```
+查看并print结果
+```{r}
+hist_df <- hist(nba$PPG, breaks = seq(10, 30, by = 5),
+                plot = FALSE)$counts
+print('频率分布')
+print(hist_df)
+```
+b. 显示相对频率分布
+```{r}
+hist_freq <- hist(nba$PPG, breaks = seq(10, 30, by = 5),
+                  plot = FALSE)
+hist_freq$density <- hist_freq$counts / sum(hist_freq$counts) * 4
+```
+查看并print结果
+```{r}
+print('相对频率分布')
+print(round(hist_freq$density, 2))
+```
+绘制相对频率分布直方图
+```{r}
+plot(hist_freq, freq = FALSE, xlab = '平均得分数(PPG)',
+     main = '相对频率分布', col = 'green')
+```
+
+```
+c. 显示累积百分比频率分布
+```{r}
+hist_cum <- hist(nba$PPG, breaks = seq(10, 30, by = 5),
+                 plot = FALSE)
+hist_cum$counts <- hist_cum$counts / sum(hist_cum$counts)
+```
+求累计比例
+```{r}
+hist_cum$accumulative_count <- cumsum(hist_cum$counts)
+
+```
+将小数转换为百分比并查看结果
+```{r}
+print('累积百分比频率分布')
+print(round(hist_cum$accumulative_count * 100, 2))
+```
+d. 展示平均得分数直方图
+```{r}
+hist(nba$PPG, breaks = seq(10, 30, by = 5),
+     xlab = '平均得分数(PPG)', main = '平均得分数直方图', col = 'red')
+```
+e. It seems skewed rightly, for it has a long tail to the right.
+f. 1-78% = 22%.
+```{r}
+
+```
+# Question #3: A researcher reports survey results by stating that the standard error of the mean is 20. The population standard deviation is 500
+```{r}
+simga <- 500
+SE <- 20
+```
+根据公式计算样本n
+```{r}
+n <- (simga/SE)^2
+```
+print样本n
+```{r}
+print(paste("样本量为：",n))
+```
+b.计算人口在 ±25 内的概率
+转化成标准正态分布
+```{r}
+standard <- simga/sqrt(n)
+z_low <- (-25)/standard
+z_upr <- 25/standard
+```
+使用pnorm函数计算数值、结果百分比转换
+```{r}
+probability <- pnorm(z_upr)-pnorm(z_low)
+probability_percentage <- round(probability*100,1)
+print(paste("人口在±25内概率为:",probability_percentage,"%"))
+```
+# Question #4: Young Professional Magazine (Attached Data: Professional)
+```{r}
+professional <- read.csv('Professional.csv')
+```
+#1.Develop appropriate descriptive statistics to summarize the data.
+```{r}
+summary(professional)
+```
+#2.Develop 95% confidence intervals for the mean age and household income of subscribers
+```{r}
+age_t <- t.test(professional$Age,conf.level = 0.95)$conf.int
+print(paste("年龄95%的置信区间为: [", round(age_t[1], 2), ", ", round(age_t[2], 2), "]"))
+names <- names(professional)
+names[7] <- "Household.Income"
+colnames(professional) <- names
+income_t <- t.test(professional$Household.Income,conf.level = 0.95)$conf.int
+print(paste("收入95%的置信区间为: [", round(income_t[1], 2), ", ", round(income_t[2], 2), "]"))
+
+```
+#3.Develop 95% confidence intervals for the proportion of subscribers who have broadband
+#access at home and the proportion of subscribers who have children
+#总用户数
+```{r}
+total_users <- 410
+```
+#有宽带接入的用户数
+```{r}
+broadband_users <- sum(grepl("Yes", professional$Broadband.Access))
+```
+#有孩子的用户数
+```{r}
+children_users <- sum(grepl("Yes", professional$Have.Children))
+```
+#计算有宽带接入的用户比例的95%置信区间
+```{r}
+ci_broadband <- prop.test(x = broadband_users, n = total_users)
+```
+#计算有孩子的用户比例的95%置信区间、打印结果
+```{r}
+ci_children <- prop.test(x = children_users, n = total_users)
+cat("95% Confidence Interval for Broadband Access:\n")
+print(ci_broadband$conf.int)
+cat("\n95% Confidence Interval for Having Children:\n")
+print(ci_children$conf.int)
+```
+#4. Would Young Professional be a good advertising outlet for online brokers? Justify your
+#conclusion with statistical data.
+```{r}
+library(dplyr)
+```
+
+```{r}
+#删除缺失值
+professionals <- na.omit(professional) 
+```
+# 定义年轻专业人士
+```{r}
+young_professionals <- filter(professionals, Age < 35)
+```
+# 描述性统计分析
+```{r}
+summary_stats <- young_professionals %>%
+  summarise(
+    Average_Investments = mean(Value.of.Investments , na.rm = TRUE),
+    Average_Transactions = mean(Number.of.Transactions, na.rm = TRUE),
+    Household_Income = mean(Household.Income, na.rm = TRUE)
+  )
+```
+# 相关性分析
+```{r}
+correlation <- cor(young_professionals$Value.of.Investments, young_professionals$Number.of.Transactions)
+```
+# 回归分析
+```{r}
+model <- lm(Number.of.Transactions ~ Value.of.Investments + Household.Income, data = young_professionals)
+```
+# 显示结果
+```{r}
+summary(model)
+library(ggplot2)
+professional$Have.Children <- as.factor(professional$Have.Children)
+ggplot(professional, aes(x = Have.Children, y = Household.Income)) +
+  geom_boxplot() +
+  labs(title = "Boxplot of Household Income by Presence of Children",
+       x = "Presence of Children",
+       y = "Household Income") +
+  theme_minimal()
+
+```
+# Question #5: Quality Associate, Inc. (Attached Data: Quality)
+```{r}
+quality_data <- read.csv("Quality.csv")
+alpha <- 0.01
+sample_means <- apply(quality_data, 1, mean)
+sample_sds <- apply(quality_data, 1, sd)
+sigma <- 0.21
+n <- 30
+t_tests <- sapply(1:nrow(quality_data), function(i) {
+  t_stat <- (sample_means[i] - 12) / (sigma / sqrt(n))
+  p_value <- 2 * pt(abs(t_stat), df = n - 1, lower.tail = FALSE)
+  list(t_stat = t_stat, p_value = p_value)
+})
+t_tests
+sample_sds
+mean(sample_sds)
+upper_limit <- 12 + 3 * (sigma / sqrt(n))
+lower_limit <- 12 - 3 * (sigma / sqrt(n))
+c(upper_limit, lower_limit)
+
+```
+#如果显著性水平增加，第一类错误（错误地拒绝正确的零假设）的风险会增加。
+```{r}
+
+```
+# Question #6
+```{r}
+data <- read.csv("Occupancy.csv")
+data$Mar.07 <- ifelse(data$Mar.07=="Yes",1,0)
+data$Mar.08 <- ifelse(data$Mar.08=="Yes",1,0)
+n <- nrow(data)
+```
+# 计算2007年3月第一周出租单位的比例
+```{r}
+prop_2007 <- mean(data$Mar.07)
+```
+# 计算2008年3月第一周出租单位的比例
+```{r}
+prop_2008 <- mean(data$Mar.08)*4/3
+```
+# 打印结果
+```{r}
+cat("Proportion of units rented in Mar.07:", prop_2007, "\n")
+cat("Proportion of units rented in Mar.08:", prop_2008, "\n")
+```
+# 计算比例差异的标准误差
+```{r}
+se_diff <- sqrt((prop_2007 * (1 - prop_2007) / n) + (prop_2008 * (1 - prop_2008) / n))
+```
+# 计算95%置信区间
+```{r}
+ci_diff <- c(prop_2008 - prop_2007 - 1.96 * se_diff, prop_2008 - prop_2007 + 1.96 * se_diff)
+```
+# 打印结果
+```{r}
+cat("95% Confidence Interval for the difference in proportions:", ci_diff, "\n")
+```
+#3. On the basis of your findings, does it appear March rental rates for 2008 will be up from those a year earlier?
+```{r}
+if (ci_diff[1] > 0) {
+  cat("表明08年3月租金会同比上升.\n")
+} else {
+  cat("没有明显证据证明08年3月租金会同比上升.\n")
+}
+```
+# Question #7
+```{r}
+train <- read.csv("Training.csv")
+summary_current <- summary(train$Current)
+summary_proposed <- summary(train$Proposed)
+```
+# 打印结果
+```{r}
+cat("当前方法的描述性统计:\n")
+print(summary_current)
+cat("提议方法的描述性统计:\n")
+print(summary_proposed)
+```
+#2.Comment on any difference between the population means for the two methods. Discuss your findings.
+```{r}
+t_test_result <- t.test(train$Current, train$Proposed, var.equal = TRUE)
+print(t_test_result)
+```
+#3.c. compute the standard deviation and variance for each training method. conduct a hypothesis test about the equality of population variances for the two training methods. Discuss your findings
+```{r}
+sd_current <- sd(train$Current)
+var_current <- var(train$Current)
+sd_proposed <- sd(train$Proposed)
+var_proposed <- var(train$Proposed)
+var_test_result <- var.test(train$Current, train$Proposed)
+print(var_test_result)
+```
+#4. what conclusion can you reach about any differences between the two methods? what is your recommendation? explain
+结论：两种方法的均值没有显著差异，但方差存在显著差异，表明提议方法在训练时间上更加一致。
+#5.can you suggest other data or testing that might be desirable before making a final decision on the training program to be used in the future?
+结论：鉴于两种方法的均值相似，但提议方法的方差较小，可能更值得考虑采用提议方法，因为它可能提供更一致的训练体验。
+```{r}
+
+```
+# Question #8
+```{r}
+camry <- read.csv("Camry.csv")
+```
+#a. Develop a scatter diagram with the car mileage on the horizontal axis and the price on the vertical axis.
+```{r}
+ggplot(camry, aes(x = camry$Miles, y = camry$Price)) +
+  geom_point()
+  
+```
+#b. what does the scatter diagram developed in part (a) indicate about the relationship between the two variables?
+#从散点图中，我们可以看出里程和价格之间存在负相关关系。随着里程的增加，价格呈下降趋势
+#c. Develop the estimated regression equation that could be used to predict the price ($1000s)given the miles (1000s).
+```{r}
+model <- lm(camry$Price ~ camry$Miles, data=camry)
+summary(model)
+```
+#d. Test for a significant relationship at the .05 level of significance.
+#从回归方程的估计结果中，我们可以看到Miles的p值为0.000348，远小于0.05，因此在0.05的显著性水平下，Miles对Price有显著的影响。
+#e. Did the estimated regression equation provide a good fit? Explain.
+#R平方值 0.5387，调整后的R平方值为0.5115，这表明回归方程对数据的拟合度较好，可以解释51.15%的价格变化。
+
+#f. Provide an interpretation for the slope of the estimated regression equation.
+#斜率-0.05877表示每增加1000英里的里程，价格平均下降0.05877千美元。
+
+#g. Suppose that you are considering purchasing a previously owned 2007 Camry that has been driven 60,000 miles. Using the estimated regression equation developed in part (c), predict the price for this car. Is this the price you would offer the seller
+```{r}
+coefficients <- coef(model)
+intercept <- coefficients[1]
+slope <- coefficients[2]
+```
+# 计算预测价格
+```{r}
+predicted_price <- intercept + slope * 60
+predicted_price
+predicted_price_2 <- round(predicted_price, 2)
+paste("预测价格$",predicted_price_2,"千元")
+```
+# Question #9
+```{r}
+library(readxl)
+data <- read_excel("WE.xlsx")
+```
+#a. 通过可视化探索流失客户与⾮流失客户的⾏为特点（或特点对⽐），你能发现流失与⾮流失客户⾏为在哪些指标有可能存在显著不同？
+```{r}
+data_long <- data %>%
+  pivot_longer(cols = -流失, names_to = "指标", values_to = "值") %>%
+  mutate(流失 = factor(流失, labels = c("非流失", "流失")))
+
+ggplot(data_long, aes(x = 流失, y = 值, fill = 流失)) +
+  geom_boxplot() +
+  facet_wrap(~指标, scales = "free") +
+  labs(title = "流失与非流失客户行为特点比较", x = "客户状态", y = "指标值")
+```
+#b. 通过均值⽐较的⽅式验证上述不同是否显著。计算均值并进行t检验
+```{r}
+t_tests <- data %>%
+  pivot_longer(cols = -流失, names_to = "指标", values_to = "值") %>%
+  group_by(指标) %>%
+  do({
+    t_test <- t.test(.$值[.$流失 == 0], .$值[.$流失 == 1])
+    data.frame(指标 = unique(.$指标), 非流失_mean = mean(.$值[.$流失 == 0], na.rm = TRUE), 流失_mean = mean(.$值[.$流失 == 1], na.rm = TRUE), p_value = t_test$p.value)
+  }) %>%
+  ungroup()
+t_tests
+print(t_tests)
+```
+#c. 以”流失“为因变量，其他你认为重要的变量为⾃变量（提示：a、b两步的发现），建⽴回归⽅程对是否流失进⾏预测。
+```{r}
+model <- glm(流失 ~ 客户ID + 当月客户幸福指数 + 客户幸福指数相比上月变化 + 当月客户支持  + 当月服务优先级, data = data, family = binomial)
+summary(model)
+```
+#d. 根据上⼀步预测的结果，对尚未流失（流失=0）的客户进⾏流失可能性排序，并给出流失可能性最⼤的前100名⽤户ID列表。筛选出尚未流失的客户
+```{r}
+data_non_churn <- data[data$流失 == 0, ]
+predictions <- predict(model, newdata = data_non_churn, type = "response")
+data_non_churn$predictions <- predictions
+data_non_churn_sorted <- data_non_churn[order(-data_non_churn$predictions), ]
+top100_users <- head(data_non_churn_sorted$客户ID, 100)
+print(top100_users)
+```
